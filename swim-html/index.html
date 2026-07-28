@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="浦东新区107个游泳场所地图标注">
+    <title>浦东新区游泳场所地图</title>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=83c034ecbfa866606032c34d8cc5c69b"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: #0B0E14;
+            color: #F8FAFC;
+            overflow: hidden;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(248, 250, 252, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            max-width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+
+        .info-panel h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #38BDF8;
+        }
+
+        .info-panel p {
+            font-size: 13px;
+            color: rgba(248, 250, 252, 0.7);
+            line-height: 1.5;
+        }
+
+        .stats {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(248, 250, 252, 0.1);
+            font-size: 12px;
+            color: rgba(248, 250, 252, 0.5);
+        }
+
+        .amap-info-content {
+            font-family: inherit;
+        }
+
+        .marker-title {
+            font-weight: 600;
+            color: #0F172A;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .marker-address {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .toggle-panel {
+            position: absolute;
+            top: 20px;
+            left: 360px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(248, 250, 252, 0.1);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 13px;
+            color: #38BDF8;
+            backdrop-filter: blur(12px);
+            transition: background 0.2s ease;
+        }
+
+        .toggle-panel:hover {
+            background: rgba(15, 23, 42, 1);
+        }
+
+        @media (max-width: 768px) {
+            .info-panel {
+                max-width: calc(100vw - 40px);
+            }
+
+            .toggle-panel {
+                left: 20px;
+                top: auto;
+                bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div class="info-panel" id="infoPanel">
+        <h1>浦东新区游泳场所分布</h1>
+        <p id="status">正在加载地图...</p>
+        <div class="stats" id="stats" style="display: none;"></div>
+    </div>
+    <div class="toggle-panel" id="toggleBtn" style="display: none;">隐藏面板</div>
+
+    <script>
+        const pools = [
+            { name: "东方体育中心游泳馆", address: "中国（上海）自由贸易试验区耀体路701号中区、泳耀路50号", lng: 121.474524, lat: 31.157469 },
+            { name: "浦东游泳馆", address: "上海市浦东新区浦东南路3669号", lng: 121.505454, lat: 31.188593 },
+            { name: "源深游泳馆", address: "中国（上海）自由贸易试验区张杨路1458号东侧", lng: 121.536441, lat: 31.231947 },
+            { name: "三林游泳馆", address: "上海市浦东新区云莲路201号1幢北区1-2层", lng: 121.505765, lat: 31.181414 },
+            { name: "川沙游泳馆", address: "上海市浦东新区华夏东路2541号欣动楼地下一层", lng: 121.702793, lat: 31.200573 },
+            { name: "周浦游泳馆", address: "上海市浦东新区小沥港路365号游泳综合馆2层游泳馆", lng: 121.589771, lat: 31.114027 },
+            { name: "南汇游泳馆", address: "上海市浦东新区惠南镇观海路1000号2幢", lng: 121.784914, lat: 31.055483 },
+            { name: "万豪侯爵酒店游泳池", address: "中国（上海）自由贸易试验区浦明路988号", lng: 121.513704, lat: 31.216419 },
+            { name: "前滩香格里拉酒店游泳池", address: "中国（上海）自由贸易试验区海阳西路551号地下3-地下1、1-25层", lng: 121.480696, lat: 31.151475 },
+            { name: "喜来登由由酒店游泳池", address: "中国（上海）自由贸易试验区浦建路38号", lng: 121.518194, lat: 31.208972 },
+            { name: "美再晨健身（九城店）游泳池", address: "浦东新区锦绣路300弄35号", lng: 121.564418, lat: 31.225961 },
+            { name: "上海淳大万丽酒店游泳池", address: "浦东新区迎春路719号", lng: 121.55235, lat: 31.223789 },
+            { name: "Z立方游泳馆", address: "上海市浦东新区上川路1539号4幢1层B区", lng: 121.664291, lat: 31.2791 },
+            { name: "象屿鼎城健身会所游泳池", address: "上海市浦东新区华夏二路728弄51号", lng: 121.685964, lat: 31.186117 },
+            { name: "臻邦游泳健身中心游泳池", address: "浦明路266号B1层", lng: 121.508715, lat: 31.226598 },
+            { name: "怡蜕变九六广场健身游泳中心游泳池", address: "上海市浦东新区御桥路999号二层2F-01", lng: 121.552764, lat: 31.155815 },
+            { name: "金桥世纪运动中心游泳池", address: "上海自由贸易试验区申轮路188弄22号", lng: 121.630683, lat: 31.286164 },
+            { name: "动感健身游泳池", address: "浦东新区惠南镇城南路536号", lng: 121.696779, lat: 31.190634 },
+            { name: "博强游泳俱乐部游泳池", address: "上海市浦东新区启帆路515、517、519号地下一层03B117-1、B118商铺", lng: 121.591292, lat: 31.311882 },
+            { name: "极乐汤川沙温泉馆游泳池", address: "浦东新区川周路7076弄2号2幢、3幢、5幢、6幢", lng: 121.685972, lat: 31.167678 },
+            { name: "M LIFE健身游泳池", address: "上海市浦东新区成山路1088号B区", lng: 121.521337, lat: 31.174079 },
+            { name: "炼猫游泳馆", address: "浦东新区三灶浜路150号1幢、2幢、4幢1层", lng: 121.69943, lat: 31.197397 },
+            { name: "迈博健身游泳池", address: "中国（上海）自由贸易试验区青桐路19弄1号", lng: 121.617309, lat: 31.219353 },
+            { name: "浦东丽晶酒店游泳池", address: "上海市浦东新区世纪大道210号", lng: 121.509971, lat: 31.23426 },
+            { name: "丽思卡尔顿酒店游泳池", address: "中国（上海）自由贸易试验区世纪大道8号上海国金中心汇丰银行大楼", lng: 121.501356, lat: 31.236701 },
+            { name: "浩恒健身游泳池（施湾店）", address: "浦东新区祝桥镇施镇路396弄3号", lng: 121.755622, lat: 31.143904 },
+            { name: "澳浔健身游泳池（北蔡宝华店）", address: "上海市浦东新区北蔡成山路2388弄1号", lng: 121.546069, lat: 31.178958 },
+            { name: "亲和源度假酒店游泳池", address: "上海市浦东新区康桥镇秀沿路3001号", lng: 121.618082, lat: 31.138381 },
+            { name: "尚科游泳健身中心游泳池", address: "浦东新区海科路550号", lng: 121.597073, lat: 31.180108 },
+            { name: "金桥文体中心游泳池", address: "上海市浦东新区金高路1777号1层102室", lng: 121.610231, lat: 31.26824 },
+            { name: "伍拾壹体育游泳池（亚历山大店）", address: "上海市浦东新区枣庄路477号", lng: 121.57541, lat: 31.254181 },
+            { name: "MY STEPS life游泳池（中港汇店）", address: "中国（上海）自由贸易试验区崮山路538号、张杨路2399号1幢1夹层05、06室", lng: 121.55738, lat: 31.242071 },
+            { name: "ZT游泳健身游泳池", address: "上海市浦东新区上南路6717号、桦康路561号5楼M1-L5-001单元", lng: 121.560693, lat: 31.119971 },
+            { name: "世博桐森酒店游泳池", address: "中国（上海）自由贸易试验区世博大道1399号", lng: 121.491564, lat: 31.184598 },
+            { name: "泳极城市运动馆游泳池（万科翡翠）", address: "中国（上海）自由贸易试验区百业路167弄11号1-4楼", lng: 121.609241, lat: 31.179565 },
+            { name: "瑞泓健身游泳池（盈丰天地店）", address: "上海市浦东新区龙阳路2233号地下一层B1001号商铺", lng: 121.561825, lat: 31.204819 },
+            { name: "MYSTRPS life游泳池（碧云尊邸店）", address: "中国（上海）自由贸易试验区碧云路420弄", lng: 121.578909, lat: 31.23758 },
+            { name: "世博洲际酒店游泳馆", address: "浦东新区雪野路1188号", lng: 121.505126, lat: 31.199084 },
+            { name: "小小特工游泳池", address: "上海市浦东新区成山路2061号一层101-1", lng: 121.536426, lat: 31.179036 },
+            { name: "美国环球健身游泳池（周浦店）", address: "上海市浦东新区秀浦路888号第一层1-2、第五层5-1", lng: 121.57366, lat: 31.127098 },
+            { name: "阿帕健身俱乐部游泳池", address: "上海市浦东新区樱花路80弄3楼", lng: 121.544804, lat: 31.20388 },
+            { name: "绿宇酒店游泳池", address: "上海市浦东新区锦和路99弄90号负一层", lng: 121.531777, lat: 31.206106 },
+            { name: "原力健身游泳池", address: "上海市浦东新区周浦镇瑞浦路77弄70-222号三楼", lng: 121.588191, lat: 31.098097 },
+            { name: "南汇海洋青少年体育俱乐部游泳池", address: "上海市浦东新区施湾三路1025号", lng: 121.751701, lat: 31.142051 },
+            { name: "航头文化中心游泳馆", address: "浦东新区航头镇航鹤路384、386、388号4幢", lng: 121.588583, lat: 31.026984 },
+            { name: "航头百姓游泳馆", address: "浦东新区航头镇下沙新街188号6幢", lng: 121.598132, lat: 31.050377 },
+            { name: "紫金山大酒店游泳池", address: "浦东新区东方路778号", lng: 121.523474, lat: 31.227776 },
+            { name: "浦东星河湾酒店游泳池（室内、室外泳池）", address: "浦东新区锦绣路2588号", lng: 121.538159, lat: 31.192171 },
+            { name: "优徕游泳中心游泳池", address: "浦东新区张杨北路1151号（亲子馆）", lng: 121.587779, lat: 31.280436 },
+            { name: "萌帆游泳中心游泳池", address: "浦东新区行南路349弄55号4幢1层A7部位（儿童游泳馆）", lng: 121.587579, lat: 31.325027 },
+            { name: "怡蜕变新城碧翠游泳馆", address: "浦东新区繁锦路1288弄51号会所", lng: 121.583224, lat: 31.305989 },
+            { name: "浪鲨游泳俱乐部游泳池", address: "上海市浦东新区康花路205号6幢109、110室", lng: 121.559632, lat: 31.149428 },
+            { name: "荣欣健身游泳池", address: "浦东新区金钻路828弄9号地下一层B105室", lng: 121.67586, lat: 31.281145 },
+            { name: "外高桥喜来登酒店游泳池", address: "上海市浦东新区基隆路28号", lng: 121.588517, lat: 31.350684 },
+            { name: "铭留会健身游泳池（世博店）", address: "浦东新区玉盘南路800弄12幢806号地下二层", lng: 121.675084, lat: 31.210628 },
+            { name: "维景国际酒店游泳池", address: "祖冲之路2299号2层203室", lng: 121.62641, lat: 31.212054 },
+            { name: "美再晨健身游泳池（锦绣店）", address: "浦东新区锦安东路88弄6号（锦绣满堂花园小区内）", lng: 121.539742, lat: 31.204708 },
+            { name: "迈博健身游泳池（博山路店）", address: "博山路199弄4号地下一层会所", lng: 121.553758, lat: 31.242569 },
+            { name: "迈特斯游泳会所游泳池", address: "浦东新区乳山路506弄56号1层", lng: 121.533959, lat: 31.237939 },
+            { name: "泓怡健身游泳池", address: "上海市浦东新区平度路258号6幢B102室、B108室、B111室、B113室", lng: 121.578995, lat: 31.25388 },
+            { name: "卡罗特健身游泳池", address: "浦东新区秀沿路1086号地下1层", lng: 121.58019, lat: 31.134343 },
+            { name: "怡健身游泳馆", address: "浦东新区高桥镇溪兰路289弄2号", lng: 121.577849, lat: 31.333571 },
+            { name: "提香会游泳馆", address: "上海市浦东新区秀沿路1弄188号1层108室", lng: 121.543577, lat: 31.132966 },
+            { name: "根迪健身游泳池", address: "浦东新区高桥镇张杨北路5658号根迪健身", lng: 121.574497, lat: 31.345466 },
+            { name: "凯宾斯基大酒店游泳池", address: "浦东新区陆家嘴环路1288号", lng: 121.503821, lat: 31.242189 },
+            { name: "沃威尔国际健身（康桥店）游泳池", address: "浦东新区康沈路1236号地下一层、地下二层", lng: 121.57335, lat: 31.1246 },
+            { name: "文华东方酒店游泳池", address: "中国（上海）自由贸易试验区浦东南路111、139号", lng: 121.507783, lat: 31.243555 },
+            { name: "贝菲特健身游泳池", address: "浦东新区梅花路1-9号", lng: 121.538151, lat: 31.210288 },
+            { name: "玩客行体育中心游泳池", address: "上海市浦东新区居家桥路575弄18号6幢1201室", lng: 121.567686, lat: 31.254613 },
+            { name: "衡动健身游泳池", address: "上海市浦东新区华戴路299弄4号全幢", lng: 121.698743, lat: 31.18172 },
+            { name: "珀曼健身游泳池（周浦店）", address: "浦东新区康沈路1199弄31号一层101-2地下一层01", lng: 121.576386, lat: 31.124772 },
+            { name: "康桥市民健身中心·原力分中心游泳池", address: "上海市浦东新区康桥镇秀沿西路198号地下一层6、7、8室", lng: 121.535572, lat: 31.127814 },
+            { name: "锦江汤臣大酒店游泳池", address: "中国（上海）自由贸易试验区张杨路777号", lng: 121.521589, lat: 31.229661 },
+            { name: "恩然酒店游泳馆", address: "周邓公路5333弄1号401室、2号", lng: 121.620894, lat: 31.118096 },
+            { name: "一起玩体育俱乐部游泳池", address: "张杨路1515弄19号地下1、1层", lng: 121.535952, lat: 31.234304 },
+            { name: "DDY游泳健身俱乐部游泳池", address: "浦东新区罗山路2255弄1号1层会所A区-2、地下一层会所A区", lng: 121.573971, lat: 31.215184 },
+            { name: "绿地假日酒店游泳池", address: "浦东新区秀沿路1088号", lng: 121.581431, lat: 31.134832 },
+            { name: "极泳水上运动学院游泳池", address: "中国（上海）自由贸易试验区川桥路600号600-5幢1层A-3室", lng: 121.609811, lat: 31.244505 },
+            { name: "AURA综合运动中心游泳池", address: "浦东新区周秀北路89弄39-41号B1-2层", lng: 121.604946, lat: 31.105731 },
+            { name: "首善财富俱乐部游泳池", address: "浦东新区花木路1883弄96-98号", lng: 121.562228, lat: 31.214774 },
+            { name: "Beast健身Pro店游泳池", address: "浦建路15号B1层Beast健身Pro店", lng: 121.518225, lat: 31.210506 },
+            { name: "美再晨健身游泳池（汤臣豪园店）", address: "松涛路251号一层A区、二层A区", lng: 121.583722, lat: 31.210383 },
+            { name: "美再晨健身游泳池（天之骄子店）", address: "盛夏路58弄25、26号地下一层泳池", lng: 121.62859, lat: 31.214669 },
+            { name: "布噜游泳俱乐部游泳池", address: "上海市浦东新区银霄路5号", lng: 121.557225, lat: 31.21225 },
+            { name: "MYSTRPS life游泳池（滨江苑店）", address: "中国（上海）自由贸易试验区滨江大道1773弄16号地下一层01室-12室", lng: 121.514033, lat: 31.242839 },
+            { name: "张江科学城希尔顿酒店游泳池", address: "上海市浦东新区学林路1398号上海张江希尔顿酒店5楼健身中心", lng: 121.602595, lat: 31.201838 },
+            { name: "东方万国游泳馆", address: "中国（上海）自由贸易试验区新金桥路1599号17幢", lng: 121.621214, lat: 31.256377 },
+            { name: "美再晨唐镇店启能（东方外国语学校游泳馆）", address: "上海市浦东新区唐龙路1169号", lng: 121.663264, lat: 31.223406 },
+            { name: "BL菲德游泳健身游泳池（宝龙丽笙店）", address: "上海市浦东新区金海路2435-2439号（单）、2449弄2号二层A区、B区", lng: 121.605542, lat: 31.259343 },
+            { name: "星之健身游泳馆（张江店）", address: "上海市浦东新区科苑路88号德国中心公寓楼地下一层", lng: 121.586693, lat: 31.210884 },
+            { name: "海神诺富特大酒店游泳池", address: "浦东大道728号", lng: 121.524705, lat: 31.239424 },
+            { name: "LFITNESS游泳池（雍萃店）", address: "桐晚路95、晓会路84号地下1_1层", lng: 121.470625, lat: 31.15052 },
+            { name: "热带风情会所游泳池", address: "上海市浦东新区潍坊西路1弄16号", lng: 121.514246, lat: 31.22283 },
+            { name: "未来科技游泳馆", address: "上海浦东新区沪南路3768号一层101室", lng: 121.547966, lat: 31.184853 },
+            { name: "铭留会游泳池（唐镇店）", address: "上海市浦东新区玉盘南路800弄12幢806号地下二层", lng: 121.675084, lat: 31.210628 },
+            { name: "金地旭海会游泳池", address: "浦东新区航鹤路1135号", lng: 121.584805, lat: 31.043487 },
+            { name: "欧帝温水游泳馆", address: "上海市浦东新区城南路200号5幢、6幢、7幢", lng: 121.708755, lat: 31.19333 },
+            { name: "沪东健身游泳池", address: "上海市浦东新区博兴路85号沪东游泳健身中心", lng: 121.583011, lat: 31.272242 },
+            { name: "change健身游泳池（三林店）", address: "上海市浦东新区东明路1800弄16号3夹-4层", lng: 121.514239, lat: 31.160877 },
+            { name: "澳丽花苑游泳馆", address: "浦建路60弄18号1-2层", lng: 121.517701, lat: 31.207637 },
+            { name: "皇廷世际酒店游泳馆", address: "浦东新区唐安路588号地下2层A区", lng: 121.64884, lat: 31.211828 },
+            { name: "欣亦游泳俱乐部游泳池（金博广场店）", address: "上海市浦东新区浦三路1515号二号楼一楼108铺", lng: 121.529391, lat: 31.167268 },
+            { name: "Heetravel游泳中心游泳池", address: "中国（上海）自由贸易试验区蓝天路518号1F-05", lng: 121.580758, lat: 31.240483 },
+            { name: "鸿艺会游泳池", address: "上海市浦东新区金桥镇红枫路588号", lng: 121.595168, lat: 31.23827 },
+            { name: "诺动健身中心游泳池", address: "中国（上海）自由贸易试验区东育路195号3层健身房", lng: 121.481565, lat: 31.159314 },
+            { name: "金高健身游泳馆碧云分馆", address: "上海市浦东新区黄杨路25号", lng: 121.586449, lat: 31.243296 }
+        ];
+
+        let map;
+        let markers = [];
+        let markerCluster;
+
+        function initMap() {
+            const statusEl = document.getElementById('status');
+            const statsEl = document.getElementById('stats');
+            const toggleBtn = document.getElementById('toggleBtn');
+            const infoPanel = document.getElementById('infoPanel');
+
+            statusEl.textContent = '初始化地图...';
+
+            map = new AMap.Map('container', {
+                zoom: 11,
+                center: [121.55, 31.22],
+                mapStyle: 'amap://styles/dark',
+                viewMode: '2D',
+                showLabel: true,
+                features: ['bg', 'road', 'building']
+            });
+
+            statusEl.textContent = '正在添加标记...';
+
+            addMarkers();
+
+            statusEl.innerHTML = `✓ 已标注 ${pools.length} 个游泳场所<br><small>点击标记查看详情</small>`;
+            statsEl.style.display = 'block';
+            statsEl.innerHTML = `
+                数据来源：浦东新区游泳场所名单<br>
+                更新时间：2026年7月
+            `;
+
+            toggleBtn.style.display = 'block';
+
+            // 切换面板显示
+            let panelVisible = true;
+            toggleBtn.addEventListener('click', function() {
+                panelVisible = !panelVisible;
+                infoPanel.style.opacity = panelVisible ? '1' : '0';
+                infoPanel.style.pointerEvents = panelVisible ? 'auto' : 'none';
+                toggleBtn.textContent = panelVisible ? '隐藏面板' : '显示面板';
+            });
+        }
+
+        function addMarkers() {
+            pools.forEach((pool) => {
+                const marker = new AMap.Marker({
+                    position: [pool.lng, pool.lat],
+                    title: pool.name,
+                    icon: new AMap.Icon({
+                        size: new AMap.Size(24, 24),
+                        image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI5IiBmaWxsPSIjMzhCREY4Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNiIgZmlsbD0id2hpdGUiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIzIiBmaWxsPSIjMzhCREY4Ii8+PC9zdmc+',
+                        imageSize: new AMap.Size(24, 24)
+                    })
+                });
+
+                const infoWindow = new AMap.InfoWindow({
+                    content: `<div style="padding: 12px; min-width: 220px; max-width: 320px;">
+                        <div class="marker-title">${pool.name}</div>
+                        <div class="marker-address">${pool.address}</div>
+                    </div>`,
+                    offset: new AMap.Pixel(0, -30)
+                });
+
+                marker.on('click', function() {
+                    infoWindow.open(map, marker.getPosition());
+                });
+
+                map.add(marker);
+                markers.push(marker);
+            });
+
+            // 自动调整视野以显示所有标记
+            setTimeout(() => {
+                map.setFitView(null, false, [80, 80, 80, 80]);
+            }, 100);
+        }
+
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMap);
+        } else {
+            initMap();
+        }
+    </script>
+</body>
+</html>

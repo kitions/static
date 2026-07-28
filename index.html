@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>导航站</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --surface-hover: #f0f0f2;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --border: #e5e5e7;
+    --accent: #0071e3;
+    --accent-light: #e8f4fd;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    --radius: 16px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface-hover: #2c2c2e;
+    --text: #f5f5f7;
+    --text-secondary: #a1a1a6;
+    --border: #38383a;
+    --accent: #0a84ff;
+    --accent-light: #1a2a3a;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* Header */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .search-box {
+    flex: 1;
+    max-width: 480px;
+    position: relative;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 10px 16px 10px 40px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-box input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+
+  .search-box .icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 16px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:hover {
+    background: var(--surface-hover);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  /* Main content */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .categories {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .cat-btn {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .cat-btn:hover { color: var(--text); }
+  .cat-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 40px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Cards grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: transparent;
+  }
+
+  .card-favicon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .card-info {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .card-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-url {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-delete {
+    opacity: 0;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    transition: opacity 0.2s, background 0.2s, color 0.2s;
+  }
+
+  .card:hover .card-delete { opacity: 1; }
+  .card-delete:hover { background: #ff3b3020; color: #ff3b30; }
+
+  .empty {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px;
+    font-size: 14px;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px;
+    width: 420px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  }
+
+  .modal h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: var(--accent);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .header { flex-wrap: wrap; }
+    .search-box { order: 3; max-width: 100%; flex: 1 1 100%; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">◆ 导航</div>
+  <div class="search-box">
+    <span class="icon">⌕</span>
+    <input type="text" id="search" placeholder="搜索网站..." autocomplete="off">
+  </div>
+  <div class="header-actions">
+    <button class="btn" id="themeToggle" title="切换主题">🌙</button>
+    <button class="btn btn-primary" id="addBtn">+ 添加</button>
+  </div>
+</header>
+
+<main class="main" id="main"></main>
+
+<!-- Add modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>添加网站</h2>
+    <div class="form-group">
+      <label>名称</label>
+      <input type="text" id="inputName" placeholder="例如 GitHub">
+    </div>
+    <div class="form-group">
+      <label>网址</label>
+      <input type="text" id="inputUrl" placeholder="https://github.com">
+    </div>
+    <div class="form-group">
+      <label>分类</label>
+      <select id="inputCategory"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelBtn">取消</button>
+      <button class="btn btn-primary" id="saveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Data =====
+const DEFAULT_CATEGORIES = ['开发', '设计', '工具', '学习', '娱乐', '社交'];
+
+const DEFAULT_LINKS = [
+  { name: 'GitHub', url: 'https://github.com', cat: '开发', color: '#333' },
+  { name: 'Stack Overflow', url: 'https://stackoverflow.com', cat: '开发', color: '#f48024' },
+  { name: 'MDN', url: 'https://developer.mozilla.org', cat: '开发', color: '#83d0f2' },
+  { name: 'CodePen', url: 'https://codepen.io', cat: '开发', color: '#000' },
+  { name: 'Vercel', url: 'https://vercel.com', cat: '工具', color: '#000' },
+  { name: 'Notion', url: 'https://notion.so', cat: '工具', color: '#000' },
+  { name: 'Figma', url: 'https://figma.com', cat: '设计', color: '#a259ff' },
+  { name: 'Dribbble', url: 'https://dribbble.com', cat: '设计', color: '#ea4c89' },
+  { name: 'Coolors', url: 'https://coolors.co', cat: '设计', color: '#6c5ce7' },
+  { name: 'Unsplash', url: 'https://unsplash.com', cat: '设计', color: '#000' },
+  { name: 'Coursera', url: 'https://coursera.org', cat: '学习', color: '#0056d3' },
+  { name: '极客时间', url: 'https://time.geekbang.org', cat: '学习', color: '#f55d3d' },
+  { name: 'YouTube', url: 'https://youtube.com', cat: '娱乐', color: '#ff0000' },
+  { name: 'Bilibili', url: 'https://bilibili.com', cat: '娱乐', color: '#fb7299' },
+  { name: 'Twitter', url: 'https://twitter.com', cat: '社交', color: '#1da1f2' },
+  { name: '即刻', url: 'https://okjike.com', cat: '社交', color: '#ffe411' },
+];
+
+// ===== State =====
+const STORAGE_KEY = 'nav_links_v1';
+const THEME_KEY = 'nav_theme';
+
+let links = [];
+try { links = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch {}
+if (!links.length) {
+  links = [...DEFAULT_LINKS];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
+}
+
+let activeCat = '全部';
+let searchQuery = '';
+
+// ===== Elements =====
+const main = document.getElementById('main');
+const searchInput = document.getElementById('search');
+const themeToggle = document.getElementById('themeToggle');
+const addBtn = document.getElementById('addBtn');
+const modal = document.getElementById('modal');
+const cancelBtn = document.getElementById('cancelBtn');
+const saveBtn = document.getElementById('saveBtn');
+const inputName = document.getElementById('inputName');
+const inputUrl = document.getElementById('inputUrl');
+const inputCategory = document.getElementById('inputCategory');
+
+// ===== Theme =====
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  applyTheme(theme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+themeToggle.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+// ===== Categories =====
+function getCategories() {
+  const cats = new Set(links.map(l => l.cat));
+  return ['全部', ...DEFAULT_CATEGORIES.filter(c => cats.has(c)), ...[...cats].filter(c => !DEFAULT_CATEGORIES.includes(c))];
+}
+
+function renderCategories() {
+  const cats = getCategories();
+  const container = document.createElement('div');
+  container.className = 'categories';
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => {
+      activeCat = cat;
+      render();
+    });
+    container.appendChild(btn);
+  });
+  return container;
+}
+
+// ===== Cards =====
+function getFaviconUrl(url) {
+  try {
+    const domain = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch { return ''; }
+}
+
+function createCard(link) {
+  const card = document.createElement('a');
+  card.className = 'card';
+  card.href = link.url;
+  card.target = '_blank';
+  card.rel = 'noopener noreferrer';
+
+  const favicon = document.createElement('div');
+  favicon.className = 'card-favicon';
+  favicon.style.background = link.color || '#888';
+  const img = document.createElement('img');
+  img.src = getFaviconUrl(link.url);
+  img.width = 20; img.height = 20;
+  img.style.borderRadius = '4px';
+  img.onerror = () => {
+    favicon.textContent = link.name.charAt(0).toUpperCase();
+    favicon.removeChild(img);
+  };
+  favicon.appendChild(img);
+
+  const info = document.createElement('div');
+  info.className = 'card-info';
+  info.innerHTML = `<div class="card-name">${esc(link.name)}</div><div class="card-url">${esc(link.url)}</div>`;
+
+  const del = document.createElement('button');
+  del.className = 'card-delete';
+  del.textContent = '×';
+  del.title = '删除';
+  del.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (confirm(`删除「${link.name}」？`)) {
+      links = links.filter(l => l !== link);
+      save();
+      render();
+    }
+  });
+
+  card.append(favicon, info, del);
+  return card;
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ===== Render =====
+function render() {
+  const filtered = links.filter(l => {
+    const matchCat = activeCat === '全部' || l.cat === activeCat;
+    const q = searchQuery.toLowerCase();
+    const matchSearch = !q || l.name.toLowerCase().includes(q) || l.url.toLowerCase().includes(q);
+    return matchCat && matchSearch;
+  });
+
+  const grouped = {};
+  if (activeCat === '全部') {
+    const cats = getCategories().filter(c => c !== '全部');
+    cats.forEach(cat => {
+      const items = filtered.filter(l => l.cat === cat);
+      if (items.length) grouped[cat] = items;
+    });
+  } else {
+    grouped[activeCat] = filtered;
+  }
+
+  main.innerHTML = '';
+  main.appendChild(renderCategories());
+
+  if (!filtered.length) {
+    main.innerHTML += '<div class="empty">没有找到匹配的网站</div>';
+    return;
+  }
+
+  Object.entries(grouped).forEach(([cat, items]) => {
+    const section = document.createElement('div');
+    section.className = 'section';
+    section.innerHTML = `<div class="section-title">${esc(cat)}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    items.forEach(link => grid.appendChild(createCard(link)));
+    section.appendChild(grid);
+    main.appendChild(section);
+  });
+}
+
+// ===== Search =====
+searchInput.addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  render();
+});
+
+// ===== Modal =====
+function openModal() {
+  inputCategory.innerHTML = '';
+  getCategories().filter(c => c !== '全部').forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat; opt.textContent = cat;
+    inputCategory.appendChild(opt);
+  });
+  // Add "new category" option
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__'; newOpt.textContent = '+ 新建分类';
+  inputCategory.appendChild(newOpt);
+
+  inputName.value = '';
+  inputUrl.value = '';
+  modal.classList.add('show');
+  inputName.focus();
+}
+
+inputCategory.addEventListener('change', function() {
+  if (this.value === '__new__') {
+    const name = prompt('新分类名称：');
+    if (name) {
+      const opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      inputCategory.insertBefore(opt, this);
+      inputCategory.value = name;
+    }
+  }
+});
+
+function closeModal() {
+  modal.classList.remove('show');
+}
+
+function saveLink() {
+  const name = inputName.value.trim();
+  let url = inputUrl.value.trim();
+  const cat = inputCategory.value;
+  if (!name || !url || cat === '__new__') return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  links.push({ name, url, cat, color });
+  save();
+  render();
+  closeModal();
+}
+
+addBtn.addEventListener('click', openModal);
+cancelBtn.addEventListener('click', closeModal);
+saveBtn.addEventListener('click', saveLink);
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+  if (e.key === 'Enter' && modal.classList.contains('show')) saveLink();
+  if (e.key === '/' && !modal.classList.contains('show') && document.activeElement !== searchInput) {
+    e.preventDefault();
+    searchInput.focus();
+  }
+});
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
+}
+
+// ===== Init =====
+initTheme();
+render();
+</script>
+</body>
+</html>
